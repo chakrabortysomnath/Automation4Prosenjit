@@ -15,7 +15,7 @@ DEFAULT_INPUT = (
 text = st.text_area("Paste team data:", value=DEFAULT_INPUT, height=180)
 
 if st.button("Sort Teams", type="primary"):
-    pattern = r'\*([^*]+)\*\s*-?\s*([\d.]+/[\d.]+L?)?'
+    pattern = r'\*([^*]+)\*\s*[-\u2013\u2014]?\s*([\d.]+\s*/\s*[\d.]+L?)?'
     matches = re.findall(pattern, text)
 
     if not matches:
