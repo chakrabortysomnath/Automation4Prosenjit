@@ -15,25 +15,27 @@ DEFAULT_INPUT = (
 text = st.text_area("Paste team data:", value=DEFAULT_INPUT, height=180)
 
 if st.button("Sort Teams", type="primary"):
-    pattern = r'\*([^*]+)\*\s*[-\u2013\u2014]?\s*([\d.]+\s*/\s*[\d.]+L?)?'
-    matches = re.findall(pattern, text)
-
-    if not matches:
-        st.warning("No teams found. Check the input format.")
-    else:
-        teams = []
-        for name, data in matches:
-            name = name.strip()
-            if not name.startswith("Team"):
-                continue
-            data = data.strip()
-            if data:
-                raw_epi = data.rstrip('L')
-                parts = raw_epi.split('/')
-                epi = float(parts[1].strip())
+    parts = text.split('*')
+    teams = []
+    i = 0
+    while i < len(parts):
+        name = parts[i].strip()
+        name = re.sub(r'\s+', ' ', name)
+        if name.startswith('Team '):
+            data_str = parts[i + 1] if i + 1 < len(parts) else ''
+            m = re.search(r'([\d.]+)\s*/\s*([\d.]+)', data_str)
+            if m:
+                epi = float(m.group(2))
                 teams.append({'Team': name, 'EPI': epi})
             else:
                 teams.append({'Team': name, 'EPI': None})
+            i += 2
+        else:
+            i += 1
+
+    if not teams:
+        st.warning("No teams found. Check the input format.")
+    else:
 
         ranked = sorted(
             [t for t in teams if t['EPI'] is not None],
