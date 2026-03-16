@@ -1,6 +1,5 @@
 import streamlit as st
 import re
-import pandas as pd
 
 st.set_page_config(page_title="Team Sorter", layout="centered")
 st.title("Team Sorter")
@@ -16,7 +15,6 @@ DEFAULT_INPUT = (
 text = st.text_area("Paste team data:", value=DEFAULT_INPUT, height=180)
 
 if st.button("Sort Teams", type="primary"):
-    # Match *Team Name* optionally followed by - NOP/EPI
     pattern = r'\*([^*]+)\*\s*-?\s*([\d.]+/[\d.]+L?)?'
     matches = re.findall(pattern, text)
 
@@ -26,15 +24,16 @@ if st.button("Sort Teams", type="primary"):
         teams = []
         for name, data in matches:
             name = name.strip()
+            if not name.startswith("Team"):
+                continue
             data = data.strip()
             if data:
                 raw_epi = data.rstrip('L')
                 parts = raw_epi.split('/')
-                nop = parts[0].strip()
                 epi = float(parts[1].strip())
-                teams.append({'Team': name, 'NOP': nop, 'EPI': epi, 'Display': data})
+                teams.append({'Team': name, 'EPI': epi})
             else:
-                teams.append({'Team': name, 'NOP': None, 'EPI': None, 'Display': None})
+                teams.append({'Team': name, 'EPI': None})
 
         ranked = sorted(
             [t for t in teams if t['EPI'] is not None],
@@ -44,22 +43,14 @@ if st.button("Sort Teams", type="primary"):
         unranked = [t for t in teams if t['EPI'] is None]
 
         medals = {1: '🥇', 2: '🥈', 3: '🥉'}
-        rows = []
         for i, t in enumerate(ranked, 1):
-            rows.append({
-                'Rank': i,
-                'Medal': medals.get(i, ''),
-                'Team': t['Team'],
-                'NOP / EPI': t['Display'],
-            })
+            medal = medals.get(i, '')
+            st.markdown(
+                f"**{i}**&nbsp;&nbsp;{medal}&nbsp;&nbsp;{t['Team']}",
+                unsafe_allow_html=True
+            )
         for t in unranked:
-            rows.append({
-                'Rank': '—',
-                'Medal': '',
-                'Team': t['Team'],
-                'NOP / EPI': '—',
-            })
-
-        df = pd.DataFrame(rows)
-        st.dataframe(df, hide_index=True, use_container_width=True)
-        st.caption(f"Total teams: {len(ranked)} ranked, {len(unranked)} unranked")
+            st.markdown(
+                f"**—**&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{t['Team']}",
+                unsafe_allow_html=True
+            )
