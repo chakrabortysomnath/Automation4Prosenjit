@@ -95,8 +95,8 @@ def _apply_watermark(img):
         return
     opacity = _CFG['theme']['watermark_opacity']   # 0-255
     logo = Image.open(logo_path).convert('RGBA')
-    # Scale logo to fit 70% of the smaller canvas dimension
-    scale = (min(img.width, img.height) * 0.70) / max(logo.width, logo.height)
+    # Scale logo to cover (fill) the entire canvas, then centre-crop
+    scale = max(img.width / logo.width, img.height / logo.height)
     new_w = max(1, int(logo.width  * scale))
     new_h = max(1, int(logo.height * scale))
     logo = logo.resize((new_w, new_h), Image.LANCZOS)
@@ -104,7 +104,7 @@ def _apply_watermark(img):
     r, g, b, a = logo.split()
     a = a.point(lambda p: int(p * opacity / 255))
     logo = Image.merge('RGBA', (r, g, b, a))
-    # Centre on canvas
+    # Centre on canvas (may extend beyond edges — paste clips automatically)
     x = (img.width  - new_w) // 2
     y = (img.height - new_h) // 2
     img.paste(logo, (x, y), logo)
@@ -134,7 +134,7 @@ def make_top3_image(top3_entries):
     total_w    = max(PAD + ICON_H + 16 + max_text_w + PAD,
                      title_bb[2] - title_bb[0] + PAD * 2)
 
-    BG     = tuple(_CFG['theme']['bg_color']) + (255,)
+    BG     = (0, 0, 0, 0)
     BORDER = tuple(_CFG['theme']['border_color'])
     BW     = _CFG['theme']['border_width']
     M      = _CFG['theme']['margin']
@@ -148,7 +148,7 @@ def make_top3_image(top3_entries):
 
     # Title row
     y = M + PAD
-    d.text((M + PAD, y), title, font=font_title, fill=(255, 255, 255))
+    d.text((M + PAD, y), title, font=font_title, fill=(255, 220, 50))
     y += title_h + PAD
 
     # Medal rows
@@ -183,20 +183,16 @@ def make_duck_image(duck_names):
     title_bb = font_title.getbbox(title)
     title_h  = title_bb[3] - title_bb[1]
 
-    duck_em = _emoji_img('🦆', ICON_H)
-    if duck_em is None:
-        duck_em = _duck_badge(ICON_H)
-
     row_h   = max(ICON_H, TEXT_SIZE + 6)
     n       = len(duck_names)
-    total_h = PAD + ICON_H + PAD + n * row_h + (n - 1) * ROW_GAP + PAD
+    total_h = PAD + title_h + PAD + n * row_h + (n - 1) * ROW_GAP + PAD
 
     max_name_w = max((font_name.getbbox(nm)[2] for nm in duck_names), default=200)
     badge_w    = 36
-    hdr_w      = PAD + duck_em.width + 10 + (title_bb[2] - title_bb[0]) + 10 + duck_em.width + PAD
+    hdr_w      = PAD + (title_bb[2] - title_bb[0]) + PAD
     total_w    = max(PAD + max_name_w + 14 + badge_w + PAD, hdr_w)
 
-    BG     = tuple(_CFG['theme']['bg_color']) + (255,)
+    BG     = (0, 0, 0, 0)
     BORDER = tuple(_CFG['theme']['border_color'])
     BW     = _CFG['theme']['border_width']
     M      = _CFG['theme']['margin']
@@ -208,15 +204,10 @@ def make_duck_image(duck_names):
     d   = ImageDraw.Draw(img)
     d.rectangle([0, 0, canvas_w - 1, canvas_h - 1], outline=BORDER, width=BW)
 
-    # Header: 🦆 DUCK TALES TEAM FTD 🦆
+    # Header: DUCK TALES TEAM FTD
     y = M + PAD
-    x = M + PAD
-    img.paste(duck_em, (x, y), duck_em)
-    x += duck_em.width + 10
-    d.text((x, y + (ICON_H - title_h) // 2), title, font=font_title, fill=(255, 220, 50))
-    x += title_bb[2] - title_bb[0] + 10
-    img.paste(duck_em, (x, y), duck_em)
-    y += ICON_H + PAD
+    d.text((M + PAD, y), title, font=font_title, fill=(255, 220, 50))
+    y += title_h + PAD
 
     # Team rows: name + red 0 badge
     for name in duck_names:
@@ -239,7 +230,7 @@ def make_duck_image(duck_names):
 
 def img_to_bytes(pil_img):
     buf = io.BytesIO()
-    pil_img.convert('RGB').save(buf, format='PNG')
+    pil_img.save(buf, format='PNG')
     return buf.getvalue()
 
 

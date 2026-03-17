@@ -5,7 +5,7 @@
     "border_width": 10,
     "margin": 18,
     "watermark_logo": "assets/emoji/HDFCLife Logo.png",
-    "watermark_opacity": 30
+    "watermark_opacity": 200
   },
   "fonts": {
     "bold_candidates": [
