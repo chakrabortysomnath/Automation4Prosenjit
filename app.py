@@ -1,108 +1,177 @@
 import streamlit as st
 import re
 import io
+import os
 from PIL import Image, ImageDraw, ImageFont
 
 st.set_page_config(page_title="Team Sorter", layout="centered")
 st.title("Team Sorter")
 
-# ---------- FONT PATHS ----------
-BOLD_FONT  = '/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf'
-REG_FONT   = '/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf'
-EMOJI_FONT = '/usr/share/fonts/truetype/noto/NotoColorEmoji.ttf'
+# ---------- FONT RESOLUTION (works locally and on Streamlit Cloud) ----------
+def _find_font(bold=True):
+    """Return a path to a TTF font, falling back to matplotlib's bundled DejaVu."""
+    local = [
+        '/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf' if bold
+            else '/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf',
+        '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf' if bold
+            else '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
+        '/usr/share/fonts/truetype/freefont/FreeSansBold.ttf' if bold
+            else '/usr/share/fonts/truetype/freefont/FreeSans.ttf',
+    ]
+    for p in local:
+        if os.path.exists(p):
+            return p
+    # Always-available fallback via matplotlib
+    import matplotlib.font_manager as fm
+    prop = fm.FontProperties(weight='bold' if bold else 'regular', family='DejaVu Sans')
+    return fm.findfont(prop)
+
+
+def _find_emoji_font():
+    candidates = [
+        '/usr/share/fonts/truetype/noto/NotoColorEmoji.ttf',
+        '/usr/share/fonts/noto/NotoColorEmoji.ttf',
+        '/System/Library/Fonts/Apple Color Emoji.ttc',
+    ]
+    for p in candidates:
+        if os.path.exists(p):
+            return p
+    return None
+
+
+BOLD_FONT  = _find_font(bold=True)
+REG_FONT   = _find_font(bold=False)
+EMOJI_FONT = _find_emoji_font()          # may be None on Streamlit Cloud
+
+# Medal colours for fallback circle badges
+MEDAL_COLORS = {
+    1: (255, 215,   0),   # gold
+    2: (192, 192, 192),   # silver
+    3: (205, 127,  50),   # bronze
+}
 
 # ---------- IMAGE HELPERS ----------
 def _emoji_img(char, target_h):
-    """Render a single emoji to an RGBA image scaled to target_h pixels tall."""
-    ef = ImageFont.truetype(EMOJI_FONT, 109)
-    bb = ef.getbbox(char)
-    w, h = bb[2] - bb[0], bb[3] - bb[1]
-    if h == 0:
-        return Image.new('RGBA', (target_h, target_h), (0, 0, 0, 0))
-    tmp = Image.new('RGBA', (w + 4, h + 4), (0, 0, 0, 0))
-    ImageDraw.Draw(tmp).text((-bb[0] + 2, -bb[1] + 2), char, font=ef, embedded_color=True)
-    scale = target_h / h
-    return tmp.resize((max(1, int(w * scale)), target_h), Image.LANCZOS)
+    """Render emoji to RGBA image if font available, else None."""
+    if EMOJI_FONT is None:
+        return None
+    try:
+        ef = ImageFont.truetype(EMOJI_FONT, 109)
+        bb = ef.getbbox(char)
+        w, h = bb[2] - bb[0], bb[3] - bb[1]
+        if h == 0:
+            return None
+        tmp = Image.new('RGBA', (w + 4, h + 4), (0, 0, 0, 0))
+        ImageDraw.Draw(tmp).text((-bb[0] + 2, -bb[1] + 2), char, font=ef, embedded_color=True)
+        scale = target_h / h
+        return tmp.resize((max(1, int(w * scale)), target_h), Image.LANCZOS)
+    except Exception:
+        return None
 
 
+def _medal_circle(rank, size):
+    """Draw a coloured circle with rank number — fallback when emoji unavailable."""
+    color = MEDAL_COLORS.get(rank, (150, 150, 150))
+    img = Image.new('RGBA', (size, size), (0, 0, 0, 0))
+    d   = ImageDraw.Draw(img)
+    d.ellipse([0, 0, size - 1, size - 1], fill=color)
+    font = ImageFont.truetype(BOLD_FONT, int(size * 0.55))
+    txt  = str(rank)
+    bb   = font.getbbox(txt)
+    tw, th = bb[2] - bb[0], bb[3] - bb[1]
+    d.text(((size - tw) // 2 - bb[0], (size - th) // 2 - bb[1]), txt,
+           font=font, fill=(30, 30, 30))
+    return img
+
+
+def _duck_badge(size):
+    """Simple teal duck-shaped rectangle when emoji unavailable."""
+    img = Image.new('RGBA', (size * 2, size), (0, 0, 0, 0))
+    d   = ImageDraw.Draw(img)
+    d.rounded_rectangle([0, 0, size * 2 - 1, size - 1], radius=size // 4,
+                         fill=(0, 150, 136))
+    font = ImageFont.truetype(BOLD_FONT, int(size * 0.5))
+    bb   = font.getbbox("DK")
+    tw, th = bb[2] - bb[0], bb[3] - bb[1]
+    d.text(((size * 2 - tw) // 2 - bb[0], (size - th) // 2 - bb[1]), "DK",
+           font=font, fill=(255, 255, 255))
+    return img
+
+
+# ---------- IMAGE GENERATORS ----------
 def make_top3_image(top3_entries):
-    """
-    top3_entries: list of (medal_emoji, team_name_str)
-    Returns a PIL Image.
-    """
-    EMOJI_H   = 38
-    TEXT_SIZE = 36
-    PAD       = 24
-    ROW_GAP   = 14
-    TITLE_SIZE = 28
+    """top3_entries: list of (rank_int, team_name_str)"""
+    ICON_H     = 40
+    TEXT_SIZE  = 36
+    PAD        = 24
+    ROW_GAP    = 14
+    TITLE_SIZE = 26
 
     font_title = ImageFont.truetype(BOLD_FONT, TITLE_SIZE)
     font_name  = ImageFont.truetype(BOLD_FONT, TEXT_SIZE)
 
-    title = "Top 3 CSM Teams FTD"
+    title    = "Top 3 CSM Teams FTD"
     title_bb = font_title.getbbox(title)
     title_h  = title_bb[3] - title_bb[1]
+    row_h    = max(ICON_H, TEXT_SIZE + 6)
+    n        = len(top3_entries)
+    total_h  = PAD + title_h + PAD + n * row_h + (n - 1) * ROW_GAP + PAD
 
-    row_h = max(EMOJI_H, TEXT_SIZE + 6)
-    n     = len(top3_entries)
-    total_h = PAD + title_h + PAD + n * row_h + (n - 1) * ROW_GAP + PAD
-
-    # Estimate width
     max_text_w = max(font_name.getbbox(name)[2] for _, name in top3_entries)
-    total_w = PAD + EMOJI_H + 14 + max_text_w + PAD
-    total_w = max(total_w, font_title.getbbox(title)[2] + PAD * 2)
+    total_w    = max(PAD + ICON_H + 16 + max_text_w + PAD,
+                     title_bb[2] - title_bb[0] + PAD * 2)
 
     img = Image.new('RGBA', (total_w, total_h), (28, 28, 28, 255))
     d   = ImageDraw.Draw(img)
 
-    # Title
+    # Title row
     y = PAD
-    d.text((PAD, y), title, font=font_title, fill=(220, 220, 220))
+    d.text((PAD, y), title, font=font_title, fill=(210, 210, 210))
     y += title_h + PAD
 
-    # Rows
-    for medal_char, name in top3_entries:
-        em_img = _emoji_img(medal_char, EMOJI_H)
-        img.paste(em_img, (PAD, y), em_img)
-        text_y = y + (EMOJI_H - TEXT_SIZE) // 2
-        d.text((PAD + em_img.width + 14, text_y), name, font=font_name, fill=(255, 255, 255))
+    # Medal rows
+    medal_chars = {1: '🥇', 2: '🥈', 3: '🥉'}
+    for rank, name in top3_entries:
+        em = _emoji_img(medal_chars.get(rank, ''), ICON_H)
+        if em is None:
+            em = _medal_circle(rank, ICON_H)
+        img.paste(em, (PAD, y + (row_h - ICON_H) // 2), em)
+        text_y = y + (row_h - TEXT_SIZE) // 2
+        d.text((PAD + ICON_H + 16, text_y), name, font=font_name, fill=(255, 255, 255))
         y += row_h + ROW_GAP
 
     return img
 
 
 def make_duck_image(duck_names):
-    """
-    duck_names: list of team name strings (no 'Team' prefix)
-    Returns a PIL Image.
-    """
-    EMOJI_H    = 36
+    """duck_names: list of team name strings (no 'Team' prefix)"""
+    ICON_H     = 38
     TEXT_SIZE  = 30
     BADGE_SIZE = 26
     PAD        = 24
     ROW_GAP    = 12
-    TITLE_SIZE = 28
+    TITLE_SIZE = 26
 
     font_title = ImageFont.truetype(BOLD_FONT, TITLE_SIZE)
     font_name  = ImageFont.truetype(REG_FONT,  TEXT_SIZE)
     font_badge = ImageFont.truetype(BOLD_FONT, BADGE_SIZE)
 
-    title = "DUCK TALES TEAM FTD"
+    title    = "DUCK TALES TEAM FTD"
     title_bb = font_title.getbbox(title)
     title_h  = title_bb[3] - title_bb[1]
 
-    duck_em = _emoji_img('🦆', EMOJI_H)
+    duck_em = _emoji_img('🦆', ICON_H)
+    if duck_em is None:
+        duck_em = _duck_badge(ICON_H)
 
-    row_h = max(EMOJI_H, TEXT_SIZE + 6)
-    n     = len(duck_names)
-    total_h = PAD + EMOJI_H + 10 + title_h + PAD + n * row_h + (n - 1) * ROW_GAP + PAD
+    row_h   = max(ICON_H, TEXT_SIZE + 6)
+    n       = len(duck_names)
+    total_h = PAD + ICON_H + PAD + n * row_h + (n - 1) * ROW_GAP + PAD
 
-    # Estimate width: name + badge
     max_name_w = max((font_name.getbbox(nm)[2] for nm in duck_names), default=200)
-    badge_w = 34
-    total_w = PAD + max_name_w + 14 + badge_w + PAD
-    header_w = PAD + duck_em.width + 10 + font_title.getbbox(title)[2] + 10 + duck_em.width + PAD
-    total_w = max(total_w, header_w)
+    badge_w    = 36
+    hdr_w      = PAD + duck_em.width + 10 + (title_bb[2] - title_bb[0]) + 10 + duck_em.width + PAD
+    total_w    = max(PAD + max_name_w + 14 + badge_w + PAD, hdr_w)
 
     img = Image.new('RGBA', (total_w, total_h), (28, 28, 28, 255))
     d   = ImageDraw.Draw(img)
@@ -112,29 +181,25 @@ def make_duck_image(duck_names):
     x = PAD
     img.paste(duck_em, (x, y), duck_em)
     x += duck_em.width + 10
-    title_y = y + (EMOJI_H - title_h) // 2
-    d.text((x, title_y), title, font=font_title, fill=(255, 220, 50))
-    x += font_title.getbbox(title)[2] + 10
+    d.text((x, y + (ICON_H - title_h) // 2), title, font=font_title, fill=(255, 220, 50))
+    x += title_bb[2] - title_bb[0] + 10
     img.paste(duck_em, (x, y), duck_em)
-    y += EMOJI_H + PAD
+    y += ICON_H + PAD
 
-    # Rows: name  [0]
+    # Team rows: name + red 0 badge
     for name in duck_names:
         name_bb = font_name.getbbox(name)
-        text_y  = y + (row_h - (name_bb[3] - name_bb[1])) // 2
-        d.text((PAD, text_y), name, font=font_name, fill=(255, 255, 255))
+        d.text((PAD, y + (row_h - (name_bb[3] - name_bb[1])) // 2),
+               name, font=font_name, fill=(255, 255, 255))
 
-        # Red badge
         bx = PAD + max_name_w + 14
         by = y + (row_h - BADGE_SIZE - 4) // 2
         bw, bh = badge_w, BADGE_SIZE + 4
         d.rounded_rectangle([bx, by, bx + bw, by + bh], radius=5, fill=(229, 57, 53))
-        zero_bb = font_badge.getbbox("0")
-        zw = zero_bb[2] - zero_bb[0]
-        zh = zero_bb[3] - zero_bb[1]
-        d.text((bx + (bw - zw) // 2, by + (bh - zh) // 2 - zero_bb[1]), "0",
-               font=font_badge, fill=(255, 255, 255))
-
+        zbb = font_badge.getbbox("0")
+        zw, zh = zbb[2] - zbb[0], zbb[3] - zbb[1]
+        d.text((bx + (bw - zw) // 2 - zbb[0], by + (bh - zh) // 2 - zbb[1]),
+               "0", font=font_badge, fill=(255, 255, 255))
         y += row_h + ROW_GAP
 
     return img
@@ -176,7 +241,6 @@ if sort_btn and text.strip():
     while i < len(parts):
         name = parts[i].strip()
         name = re.sub(r'\s+', ' ', name)
-
         if name.startswith('Team '):
             data_str = parts[i + 1] if i + 1 < len(parts) else ""
             m = re.search(r'([\d.]+)\s*/\s*([\d.]+)', data_str)
@@ -194,7 +258,6 @@ if sort_btn and text.strip():
 
     if not teams:
         st.warning("No teams found. Check the input format.")
-
     else:
         ranked = sorted(
             [t for t in teams if t["EPI"] not in (None, 0)],
@@ -208,7 +271,6 @@ if sort_btn and text.strip():
         # ── List 1: Full sorted ranking ──────────────────────────────────────
         st.markdown("---")
         st.subheader("All Ranked Teams")
-
         rows_html = '<div style="line-height:1">'
         for idx, t in enumerate(ranked, 1):
             medal = medals.get(idx, "")
@@ -229,18 +291,16 @@ if sort_btn and text.strip():
         # ── List 2: Top 3 CSM Teams ───────────────────────────────────────────
         st.markdown("---")
         st.markdown("## Top 3 CSM Teams")
-
         top3_display_html = '<div style="line-height:1">'
         top3_entries = []
         for i, t in enumerate(ranked[:3], 1):
-            medal = medals[i]
             team_name = re.sub(r'\bTeam\b\s*', '', t["Team"], flags=re.IGNORECASE).strip().upper()
             top3_display_html += (
                 f'<div style="margin:0;padding:4px 0;font-size:1.1em;font-weight:bold;">'
-                f'{medal}&nbsp;&nbsp;{team_name}'
+                f'{medals[i]}&nbsp;&nbsp;{team_name}'
                 f'</div>'
             )
-            top3_entries.append((medal, team_name))
+            top3_entries.append((i, team_name))
         top3_display_html += '</div>'
         st.markdown(top3_display_html, unsafe_allow_html=True)
 
@@ -258,7 +318,6 @@ if sort_btn and text.strip():
         # ── List 3: Duck Tales Team FTD ───────────────────────────────────────
         st.markdown("---")
         st.markdown("## 🦆 DUCK TALES TEAM FTD 🦆")
-
         duck_display_html = '<div style="line-height:1">'
         duck_names = []
         for t in duck:
