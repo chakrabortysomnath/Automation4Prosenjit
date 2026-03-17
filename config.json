@@ -28,7 +28,9 @@
     "TEXT_SIZE": 28,
     "PAD": 24,
     "ROW_GAP": 14,
-    "TITLE_SIZE": 26
+    "TITLE_SIZE": 26,
+    "header_color": [255, 220, 50],
+    "name_color": [255, 255, 255]
   },
   "duck": {
     "header": "DUCK TALES TEAM FTD",
@@ -40,6 +42,15 @@
     "BADGE_SIZE": 24,
     "PAD": 24,
     "ROW_GAP": 14,
-    "TITLE_SIZE": 26
+    "TITLE_SIZE": 26,
+    "header_color": [255, 220, 50],
+    "name_color": [255, 255, 255],
+    "score_bg_color": [229, 57, 53],
+    "score_text_color": [255, 255, 255]
+  },
+  "fallback": {
+    "medal_text_color": [30, 30, 30],
+    "duck_badge_bg_color": [0, 150, 136],
+    "duck_badge_text_color": [255, 255, 255]
   }
 }
