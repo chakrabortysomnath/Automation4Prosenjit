@@ -134,8 +134,8 @@ def make_top3_image(top3_entries):
 
 def make_duck_image(duck_names):
     """duck_names: list of team name strings (no 'Team' prefix)"""
-    ICON_H     = 38
-    TEXT_SIZE  = 30
+    ICON_H     = 40
+    TEXT_SIZE  = 36
     BADGE_SIZE = 26
     PAD        = 24
     ROW_GAP    = 12
