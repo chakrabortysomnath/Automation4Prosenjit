@@ -1,0 +1,17 @@
+{
+  "top3": {
+    "ICON_H": 38,
+    "TEXT_SIZE": 30,
+    "PAD": 24,
+    "ROW_GAP": 14,
+    "TITLE_SIZE": 26
+  },
+  "duck": {
+    "ICON_H": 38,
+    "TEXT_SIZE": 30,
+    "BADGE_SIZE": 26,
+    "PAD": 24,
+    "ROW_GAP": 12,
+    "TITLE_SIZE": 26
+  }
+}

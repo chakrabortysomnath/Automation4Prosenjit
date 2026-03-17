@@ -2,7 +2,11 @@ import streamlit as st
 import re
 import io
 import os
+import json
 from PIL import Image, ImageDraw, ImageFont
+
+with open(os.path.join(os.path.dirname(__file__), 'config.json')) as _f:
+    _CFG = json.load(_f)
 
 st.set_page_config(page_title="Team Sorter", layout="centered")
 st.title("Team Sorter")
@@ -90,11 +94,11 @@ def _duck_badge(size):
 # ---------- IMAGE GENERATORS ----------
 def make_top3_image(top3_entries):
     """top3_entries: list of (rank_int, team_name_str)"""
-    ICON_H     = 38
-    TEXT_SIZE  = 30
-    PAD        = 24
-    ROW_GAP    = 14
-    TITLE_SIZE = 26
+    ICON_H     = _CFG['top3']['ICON_H']
+    TEXT_SIZE  = _CFG['top3']['TEXT_SIZE']
+    PAD        = _CFG['top3']['PAD']
+    ROW_GAP    = _CFG['top3']['ROW_GAP']
+    TITLE_SIZE = _CFG['top3']['TITLE_SIZE']
 
     font_title = ImageFont.truetype(BOLD_FONT, TITLE_SIZE)
     font_name  = ImageFont.truetype(BOLD_FONT, TEXT_SIZE)
@@ -134,12 +138,12 @@ def make_top3_image(top3_entries):
 
 def make_duck_image(duck_names):
     """duck_names: list of team name strings (no 'Team' prefix)"""
-    ICON_H     = 38
-    TEXT_SIZE  = 30
-    BADGE_SIZE = 26
-    PAD        = 24
-    ROW_GAP    = 12
-    TITLE_SIZE = 26
+    ICON_H     = _CFG['duck']['ICON_H']
+    TEXT_SIZE  = _CFG['duck']['TEXT_SIZE']
+    BADGE_SIZE = _CFG['duck']['BADGE_SIZE']
+    PAD        = _CFG['duck']['PAD']
+    ROW_GAP    = _CFG['duck']['ROW_GAP']
+    TITLE_SIZE = _CFG['duck']['TITLE_SIZE']
 
     font_title = ImageFont.truetype(BOLD_FONT, TITLE_SIZE)
     font_name  = ImageFont.truetype(REG_FONT,  TEXT_SIZE)
