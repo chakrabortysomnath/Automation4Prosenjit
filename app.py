@@ -183,13 +183,17 @@ def make_duck_image(duck_names):
     title_bb = font_title.getbbox(title)
     title_h  = title_bb[3] - title_bb[1]
 
+    duck_em = _emoji_img('🦆', ICON_H)
+    if duck_em is None:
+        duck_em = _duck_badge(ICON_H)
+
     row_h   = max(ICON_H, TEXT_SIZE + 6)
     n       = len(duck_names)
-    total_h = PAD + title_h + PAD + n * row_h + (n - 1) * ROW_GAP + PAD
+    total_h = PAD + max(title_h, ICON_H) + PAD + n * row_h + (n - 1) * ROW_GAP + PAD
 
     max_name_w = max((font_name.getbbox(nm)[2] for nm in duck_names), default=200)
     badge_w    = 36
-    hdr_w      = PAD + (title_bb[2] - title_bb[0]) + PAD
+    hdr_w      = PAD + (title_bb[2] - title_bb[0]) + 10 + duck_em.width + PAD
     total_w    = max(PAD + max_name_w + 14 + badge_w + PAD, hdr_w)
 
     BG     = (0, 0, 0, 0)
@@ -204,10 +208,13 @@ def make_duck_image(duck_names):
     d   = ImageDraw.Draw(img)
     d.rectangle([0, 0, canvas_w - 1, canvas_h - 1], outline=BORDER, width=BW)
 
-    # Header: DUCK TALES TEAM FTD
+    # Header: DUCK TALES TEAM FTD 🦆
     y = M + PAD
-    d.text((M + PAD, y), title, font=font_title, fill=(255, 220, 50))
-    y += title_h + PAD
+    hdr_h = max(title_h, ICON_H)
+    d.text((M + PAD, y + (hdr_h - title_h) // 2), title, font=font_title, fill=(255, 220, 50))
+    ex = M + PAD + (title_bb[2] - title_bb[0]) + 10
+    img.paste(duck_em, (ex, y + (hdr_h - ICON_H) // 2), duck_em)
+    y += hdr_h + PAD
 
     # Team rows: name + red 0 badge
     for name in duck_names:
