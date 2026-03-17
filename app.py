@@ -14,20 +14,15 @@ st.title("Team Sorter")
 # ---------- FONT RESOLUTION (works locally and on Streamlit Cloud) ----------
 def _find_font(bold=True):
     """Return a path to a TTF font, falling back to matplotlib's bundled DejaVu."""
-    local = [
-        '/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf' if bold
-            else '/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf',
-        '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf' if bold
-            else '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
-        '/usr/share/fonts/truetype/freefont/FreeSansBold.ttf' if bold
-            else '/usr/share/fonts/truetype/freefont/FreeSans.ttf',
-    ]
-    for p in local:
+    key = 'bold_candidates' if bold else 'regular_candidates'
+    for p in _CFG['fonts'][key]:
         if os.path.exists(p):
             return p
     # Always-available fallback via matplotlib
     import matplotlib.font_manager as fm
-    prop = fm.FontProperties(weight='bold' if bold else 'regular', family='DejaVu Sans')
+    weight = 'bold' if bold else 'regular'
+    family = _CFG['fonts']['matplotlib_fallback_family']
+    prop = fm.FontProperties(weight=weight, family=family)
     return fm.findfont(prop)
 
 
@@ -100,10 +95,11 @@ def make_top3_image(top3_entries):
     ROW_GAP    = _CFG['top3']['ROW_GAP']
     TITLE_SIZE = _CFG['top3']['TITLE_SIZE']
 
-    font_title = ImageFont.truetype(BOLD_FONT, TITLE_SIZE)
-    font_name  = ImageFont.truetype(BOLD_FONT, TEXT_SIZE)
+    _f = {'bold': BOLD_FONT, 'regular': REG_FONT}
+    font_title = ImageFont.truetype(_f[_CFG['top3']['title_font']], TITLE_SIZE)
+    font_name  = ImageFont.truetype(_f[_CFG['top3']['name_font']],  TEXT_SIZE)
 
-    title    = "Top 3 CSM Teams FTD"
+    title    = _CFG['top3']['header']
     title_bb = font_title.getbbox(title)
     title_h  = title_bb[3] - title_bb[1]
     row_h    = max(ICON_H, TEXT_SIZE + 6)
@@ -145,11 +141,12 @@ def make_duck_image(duck_names):
     ROW_GAP    = _CFG['duck']['ROW_GAP']
     TITLE_SIZE = _CFG['duck']['TITLE_SIZE']
 
-    font_title = ImageFont.truetype(BOLD_FONT, TITLE_SIZE)
-    font_name  = ImageFont.truetype(REG_FONT,  TEXT_SIZE)
-    font_badge = ImageFont.truetype(BOLD_FONT, BADGE_SIZE)
+    _f = {'bold': BOLD_FONT, 'regular': REG_FONT}
+    font_title = ImageFont.truetype(_f[_CFG['duck']['title_font']], TITLE_SIZE)
+    font_name  = ImageFont.truetype(_f[_CFG['duck']['name_font']],  TEXT_SIZE)
+    font_badge = ImageFont.truetype(_f[_CFG['duck']['badge_font']], BADGE_SIZE)
 
-    title    = "DUCK TALES TEAM FTD"
+    title    = _CFG['duck']['header']
     title_bb = font_title.getbbox(title)
     title_h  = title_bb[3] - title_bb[1]
 

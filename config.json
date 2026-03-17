@@ -1,5 +1,21 @@
 {
+  "fonts": {
+    "bold_candidates": [
+      "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+      "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+      "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf"
+    ],
+    "regular_candidates": [
+      "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+      "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+      "/usr/share/fonts/truetype/freefont/FreeSans.ttf"
+    ],
+    "matplotlib_fallback_family": "DejaVu Sans"
+  },
   "top3": {
+    "header": "Top 3 CSM Teams FTD",
+    "title_font": "bold",
+    "name_font": "bold",
     "ICON_H": 38,
     "TEXT_SIZE": 30,
     "PAD": 24,
@@ -7,6 +23,10 @@
     "TITLE_SIZE": 26
   },
   "duck": {
+    "header": "DUCK TALES TEAM FTD",
+    "title_font": "bold",
+    "name_font": "regular",
+    "badge_font": "bold",
     "ICON_H": 38,
     "TEXT_SIZE": 30,
     "BADGE_SIZE": 24,
