@@ -2,7 +2,8 @@
   "theme": {
     "bg_color": [31, 60, 136],
     "border_color": [220, 20, 20],
-    "border_width": 6
+    "border_width": 6,
+    "margin": 18
   },
   "fonts": {
     "bold_candidates": [

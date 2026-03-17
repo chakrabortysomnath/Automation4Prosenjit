@@ -113,14 +113,17 @@ def make_top3_image(top3_entries):
     BG     = tuple(_CFG['theme']['bg_color']) + (255,)
     BORDER = tuple(_CFG['theme']['border_color'])
     BW     = _CFG['theme']['border_width']
+    M      = _CFG['theme']['margin']
 
-    img = Image.new('RGBA', (total_w, total_h), BG)
+    canvas_w = total_w + M * 2
+    canvas_h = total_h + M * 2
+    img = Image.new('RGBA', (canvas_w, canvas_h), BG)
     d   = ImageDraw.Draw(img)
-    d.rectangle([0, 0, total_w - 1, total_h - 1], outline=BORDER, width=BW)
+    d.rectangle([0, 0, canvas_w - 1, canvas_h - 1], outline=BORDER, width=BW)
 
     # Title row
-    y = PAD
-    d.text((PAD, y), title, font=font_title, fill=(255, 255, 255))
+    y = M + PAD
+    d.text((M + PAD, y), title, font=font_title, fill=(255, 255, 255))
     y += title_h + PAD
 
     # Medal rows
@@ -129,9 +132,9 @@ def make_top3_image(top3_entries):
         em = _emoji_img(medal_chars.get(rank, ''), ICON_H)
         if em is None:
             em = _medal_circle(rank, ICON_H)
-        img.paste(em, (PAD, y + (row_h - ICON_H) // 2), em)
+        img.paste(em, (M + PAD, y + (row_h - ICON_H) // 2), em)
         text_y = y + (row_h - TEXT_SIZE) // 2
-        d.text((PAD + ICON_H + 16, text_y), name, font=font_name, fill=(255, 255, 255))
+        d.text((M + PAD + ICON_H + 16, text_y), name, font=font_name, fill=(255, 255, 255))
         y += row_h + ROW_GAP
 
     return img
@@ -171,14 +174,17 @@ def make_duck_image(duck_names):
     BG     = tuple(_CFG['theme']['bg_color']) + (255,)
     BORDER = tuple(_CFG['theme']['border_color'])
     BW     = _CFG['theme']['border_width']
+    M      = _CFG['theme']['margin']
 
-    img = Image.new('RGBA', (total_w, total_h), BG)
+    canvas_w = total_w + M * 2
+    canvas_h = total_h + M * 2
+    img = Image.new('RGBA', (canvas_w, canvas_h), BG)
     d   = ImageDraw.Draw(img)
-    d.rectangle([0, 0, total_w - 1, total_h - 1], outline=BORDER, width=BW)
+    d.rectangle([0, 0, canvas_w - 1, canvas_h - 1], outline=BORDER, width=BW)
 
     # Header: 🦆 DUCK TALES TEAM FTD 🦆
-    y = PAD
-    x = PAD
+    y = M + PAD
+    x = M + PAD
     img.paste(duck_em, (x, y), duck_em)
     x += duck_em.width + 10
     d.text((x, y + (ICON_H - title_h) // 2), title, font=font_title, fill=(255, 220, 50))
@@ -189,10 +195,10 @@ def make_duck_image(duck_names):
     # Team rows: name + red 0 badge
     for name in duck_names:
         name_bb = font_name.getbbox(name)
-        d.text((PAD, y + (row_h - (name_bb[3] - name_bb[1])) // 2),
+        d.text((M + PAD, y + (row_h - (name_bb[3] - name_bb[1])) // 2),
                name, font=font_name, fill=(255, 255, 255))
 
-        bx = PAD + max_name_w + 14
+        bx = M + PAD + max_name_w + 14
         by = y + (row_h - BADGE_SIZE - 4) // 2
         bw, bh = badge_w, BADGE_SIZE + 4
         d.rounded_rectangle([bx, by, bx + bw, by + bh], radius=5, fill=(229, 57, 53))
