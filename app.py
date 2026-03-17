@@ -27,23 +27,19 @@ def _find_font(bold=True):
     return fm.findfont(prop)
 
 
-def _find_emoji_font():
-    candidates = [
-        '/usr/share/fonts/truetype/noto/NotoColorEmoji.ttf',
-        '/usr/share/fonts/noto/NotoColorEmoji.ttf',
-        '/System/Library/Fonts/Apple Color Emoji.ttc',
-    ]
-    for p in candidates:
-        if os.path.exists(p):
-            return p
-    return None
+BOLD_FONT = _find_font(bold=True)
+REG_FONT  = _find_font(bold=False)
 
+# Bundled Twemoji PNGs (committed to repo — no CDN or system font needed)
+_ASSETS = os.path.join(os.path.dirname(__file__), 'assets', 'emoji')
+_EMOJI_FILES = {
+    '🥇': os.path.join(_ASSETS, '1f947.png'),
+    '🥈': os.path.join(_ASSETS, '1f948.png'),
+    '🥉': os.path.join(_ASSETS, '1f949.png'),
+    '🦆': os.path.join(_ASSETS, '1f986.png'),
+}
 
-BOLD_FONT  = _find_font(bold=True)
-REG_FONT   = _find_font(bold=False)
-EMOJI_FONT = _find_emoji_font()          # may be None on Streamlit Cloud
-
-# Medal colours for fallback circle badges
+# Medal colours for fallback circle badges (if PNG files somehow missing)
 MEDAL_COLORS = {
     1: (255, 215,   0),   # gold
     2: (192, 192, 192),   # silver
@@ -52,21 +48,14 @@ MEDAL_COLORS = {
 
 # ---------- IMAGE HELPERS ----------
 def _emoji_img(char, target_h):
-    """Render emoji to RGBA image if font available, else None."""
-    if EMOJI_FONT is None:
-        return None
-    try:
-        ef = ImageFont.truetype(EMOJI_FONT, 109)
-        bb = ef.getbbox(char)
-        w, h = bb[2] - bb[0], bb[3] - bb[1]
-        if h == 0:
-            return None
-        tmp = Image.new('RGBA', (w + 4, h + 4), (0, 0, 0, 0))
-        ImageDraw.Draw(tmp).text((-bb[0] + 2, -bb[1] + 2), char, font=ef, embedded_color=True)
+    """Load bundled Twemoji PNG and scale to target_h pixels tall."""
+    path = _EMOJI_FILES.get(char)
+    if path and os.path.exists(path):
+        em = Image.open(path).convert('RGBA')
+        w, h = em.size
         scale = target_h / h
-        return tmp.resize((max(1, int(w * scale)), target_h), Image.LANCZOS)
-    except Exception:
-        return None
+        return em.resize((max(1, int(w * scale)), target_h), Image.LANCZOS)
+    return None   # triggers coloured-circle / duck-badge fallback
 
 
 def _medal_circle(rank, size):
