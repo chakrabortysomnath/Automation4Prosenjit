@@ -109,7 +109,7 @@ if sort_btn and text.strip():
         st.markdown(rows_html, unsafe_allow_html=True)
 
         # ---------- TOP 3 ----------
-        st.markdown("## Top 3 CSM Team")
+        st.markdown("## Top 3 CSM Teams")
 
         top3_lines = []
         top3_html = '<div style="line-height:1">'
@@ -118,8 +118,8 @@ if sort_btn and text.strip():
             medal = medals.get(i, "")
             team_name = re.sub(r'\bTeam\b\s*', '', t["Team"], flags=re.IGNORECASE).strip().upper()
             top3_html += (
-                f'<div style="margin:0;padding:4px 0;font-size:1.1em;">'
-                f'{medal}&nbsp;&nbsp;<b>{team_name}</b>'
+                f'<div style="margin:0;padding:4px 0;font-size:1.1em;font-weight:bold;">'
+                f'{medal}&nbsp;&nbsp;{team_name}'
                 f'</div>'
             )
             top3_lines.append(f"{medal} {team_name}")
@@ -128,12 +128,12 @@ if sort_btn and text.strip():
         st.markdown(top3_html, unsafe_allow_html=True)
 
         if top3_lines:
-            copy_text = "Top 3 CSM Team FTD\n\n" + "\n".join(top3_lines)
+            copy_text = "Top 3 CSM Teams FTD\n\n" + "\n".join(top3_lines)
             st.code(copy_text, language=None)
             copy_button(copy_text, "Top 3")
 
         # ---------- DUCK LIST ----------
-        st.markdown("## 🦆 DUCK TALE TEAM FTD 🦆")
+        st.markdown("## 🦆 DUCK TALES TEAM FTD 🦆")
 
         duck_lines = []
         duck_html = '<div style="line-height:1">'
@@ -142,7 +142,9 @@ if sort_btn and text.strip():
             team_name = re.sub(r'\bTeam\b\s*', '', t["Team"], flags=re.IGNORECASE).strip()
             duck_html += (
                 f'<div style="margin:0;padding:4px 0;">'
-                f'{team_name}'
+                f'{team_name}&nbsp;&nbsp;'
+                f'<span style="background:#e53935;color:white;font-weight:bold;'
+                f'border-radius:4px;padding:1px 7px;font-size:1em;">0</span>'
                 f'</div>'
             )
             duck_lines.append(team_name)
@@ -151,6 +153,6 @@ if sort_btn and text.strip():
         st.markdown(duck_html, unsafe_allow_html=True)
 
         if duck_lines:
-            duck_text = "🦆DUCK TALE TEAM FTD🦆\n\n" + "\n".join(duck_lines)
+            duck_text = "🦆DUCK TALES TEAM FTD🦆\n\n" + "\n".join(duck_lines)
             st.code(duck_text, language=None)
             copy_button(duck_text, "Duck Tale Team")
