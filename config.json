@@ -16,8 +16,8 @@
     "header": "Top 3 CSM Teams FTD",
     "title_font": "bold",
     "name_font": "bold",
-    "ICON_H": 38,
-    "TEXT_SIZE": 30,
+    "ICON_H": 36,
+    "TEXT_SIZE": 28,
     "PAD": 24,
     "ROW_GAP": 14,
     "TITLE_SIZE": 26
