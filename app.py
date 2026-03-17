@@ -11,22 +11,16 @@ if "input_text" not in st.session_state:
 
 # ---------- COPY BUTTON FUNCTION ----------
 def copy_button(text, label):
+    escaped = text.replace('`', r'\`').replace('$', r'\$')
     html = f"""
-    <div style="margin-top:8px;margin-bottom:15px">
-        <button onclick="navigator.clipboard.writeText(`{text}`)"
-        style="
-        background-color:#4CAF50;
-        color:white;
-        padding:6px 14px;
-        border:none;
-        border-radius:6px;
-        cursor:pointer;
-        font-size:14px;">
+    <div style="margin-top:6px;margin-bottom:12px">
+        <button onclick="navigator.clipboard.writeText(`{escaped}`).then(()=>{{this.innerText='✅ Copied!';setTimeout(()=>this.innerText='📋 Copy {label}',1500)}})"
+        style="background:#4CAF50;color:white;padding:6px 16px;border:none;border-radius:6px;cursor:pointer;font-size:14px;">
         📋 Copy {label}
         </button>
     </div>
     """
-    components.html(html, height=45)
+    components.html(html, height=50)
 
 # ---------- INPUT ----------
 text = st.text_area(
@@ -89,61 +83,74 @@ if sort_btn and text.strip():
             reverse=True
         )
 
-        duck = [t for t in teams if t["EPI"] == 0]
-        unranked = [t for t in teams if t["EPI"] is None]
+        # Teams with 0 or no data (X) → Duck Tale list
+        duck = [t for t in teams if t["EPI"] == 0 or t["EPI"] is None]
 
         medals = {1: "🥇", 2: "🥈", 3: "🥉"}
 
-        # ---------- MAIN RANKED LIST ----------
+        # ---------- MAIN RANKED LIST (no extra blank lines) ----------
         st.subheader("All Ranked Teams")
 
-        for i, t in enumerate(ranked, 1):
-            medal = medals.get(i, "")
-            st.markdown(f"**{i}. {medal} {t['Team']}**")
-
-        for t in unranked:
-            st.markdown(f"**— {t['Team']}**")
+        rows_html = '<div style="line-height:1">'
+        for idx, t in enumerate(ranked, 1):
+            medal = medals.get(idx, "")
+            rows_html += (
+                f'<div style="margin:0;padding:2px 0;">'
+                f'<b>{idx}</b>&nbsp;&nbsp;{medal}&nbsp;&nbsp;{t["Team"]}'
+                f'</div>'
+            )
+        for t in duck:
+            rows_html += (
+                f'<div style="margin:0;padding:2px 0;">'
+                f'<b>—</b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{t["Team"]}'
+                f'</div>'
+            )
+        rows_html += '</div>'
+        st.markdown(rows_html, unsafe_allow_html=True)
 
         # ---------- TOP 3 ----------
         st.markdown("## Top 3 CSM Team")
 
         top3_lines = []
+        top3_html = '<div style="line-height:1">'
 
         for i, t in enumerate(ranked[:3], 1):
-
             medal = medals.get(i, "")
-
-            team_name = re.sub(r'^Team\s+', '', t["Team"]).strip().upper()
-
-            st.markdown(f"{medal} **{team_name}**")
-
+            team_name = re.sub(r'\bTeam\b\s*', '', t["Team"], flags=re.IGNORECASE).strip().upper()
+            top3_html += (
+                f'<div style="margin:0;padding:4px 0;font-size:1.1em;">'
+                f'{medal}&nbsp;&nbsp;<b>{team_name}</b>'
+                f'</div>'
+            )
             top3_lines.append(f"{medal} {team_name}")
 
+        top3_html += '</div>'
+        st.markdown(top3_html, unsafe_allow_html=True)
+
         if top3_lines:
-
-            copy_text = "\n".join(top3_lines)
-
-            st.code(copy_text)
-
+            copy_text = "Top 3 CSM Team FTD\n\n" + "\n".join(top3_lines)
+            st.code(copy_text, language=None)
             copy_button(copy_text, "Top 3")
 
         # ---------- DUCK LIST ----------
         st.markdown("## 🦆 DUCK TALE TEAM FTD 🦆")
 
         duck_lines = []
+        duck_html = '<div style="line-height:1">'
 
         for t in duck:
-
-            team_name = re.sub(r'^Team\s+', '', t["Team"]).strip().upper()
-
-            st.markdown(f"🦆 **{team_name}**")
-
+            team_name = re.sub(r'\bTeam\b\s*', '', t["Team"], flags=re.IGNORECASE).strip()
+            duck_html += (
+                f'<div style="margin:0;padding:4px 0;">'
+                f'{team_name}'
+                f'</div>'
+            )
             duck_lines.append(team_name)
 
+        duck_html += '</div>'
+        st.markdown(duck_html, unsafe_allow_html=True)
+
         if duck_lines:
-
-            duck_text = "\n".join(duck_lines)
-
-            st.code(duck_text)
-
-            copy_button(duck_text, "Duck Teams")
+            duck_text = "🦆DUCK TALE TEAM FTD🦆\n\n" + "\n".join(duck_lines)
+            st.code(duck_text, language=None)
+            copy_button(duck_text, "Duck Tale Team")
