@@ -110,12 +110,17 @@ def make_top3_image(top3_entries):
     total_w    = max(PAD + ICON_H + 16 + max_text_w + PAD,
                      title_bb[2] - title_bb[0] + PAD * 2)
 
-    img = Image.new('RGBA', (total_w, total_h), (28, 28, 28, 255))
+    BG     = tuple(_CFG['theme']['bg_color']) + (255,)
+    BORDER = tuple(_CFG['theme']['border_color'])
+    BW     = _CFG['theme']['border_width']
+
+    img = Image.new('RGBA', (total_w, total_h), BG)
     d   = ImageDraw.Draw(img)
+    d.rectangle([0, 0, total_w - 1, total_h - 1], outline=BORDER, width=BW)
 
     # Title row
     y = PAD
-    d.text((PAD, y), title, font=font_title, fill=(210, 210, 210))
+    d.text((PAD, y), title, font=font_title, fill=(255, 255, 255))
     y += title_h + PAD
 
     # Medal rows
@@ -163,8 +168,13 @@ def make_duck_image(duck_names):
     hdr_w      = PAD + duck_em.width + 10 + (title_bb[2] - title_bb[0]) + 10 + duck_em.width + PAD
     total_w    = max(PAD + max_name_w + 14 + badge_w + PAD, hdr_w)
 
-    img = Image.new('RGBA', (total_w, total_h), (28, 28, 28, 255))
+    BG     = tuple(_CFG['theme']['bg_color']) + (255,)
+    BORDER = tuple(_CFG['theme']['border_color'])
+    BW     = _CFG['theme']['border_width']
+
+    img = Image.new('RGBA', (total_w, total_h), BG)
     d   = ImageDraw.Draw(img)
+    d.rectangle([0, 0, total_w - 1, total_h - 1], outline=BORDER, width=BW)
 
     # Header: 🦆 DUCK TALES TEAM FTD 🦆
     y = PAD
