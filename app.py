@@ -86,6 +86,30 @@ def _duck_badge(size):
     return img
 
 
+# ---------- WATERMARK HELPER ----------
+def _apply_watermark(img):
+    """Paste a faded logo centred on img (in-place)."""
+    logo_path = os.path.join(os.path.dirname(__file__),
+                             _CFG['theme']['watermark_logo'])
+    if not os.path.exists(logo_path):
+        return
+    opacity = _CFG['theme']['watermark_opacity']   # 0-255
+    logo = Image.open(logo_path).convert('RGBA')
+    # Scale logo to fit 70% of the smaller canvas dimension
+    scale = (min(img.width, img.height) * 0.70) / max(logo.width, logo.height)
+    new_w = max(1, int(logo.width  * scale))
+    new_h = max(1, int(logo.height * scale))
+    logo = logo.resize((new_w, new_h), Image.LANCZOS)
+    # Apply opacity to alpha channel
+    r, g, b, a = logo.split()
+    a = a.point(lambda p: int(p * opacity / 255))
+    logo = Image.merge('RGBA', (r, g, b, a))
+    # Centre on canvas
+    x = (img.width  - new_w) // 2
+    y = (img.height - new_h) // 2
+    img.paste(logo, (x, y), logo)
+
+
 # ---------- IMAGE GENERATORS ----------
 def make_top3_image(top3_entries):
     """top3_entries: list of (rank_int, team_name_str)"""
@@ -118,6 +142,7 @@ def make_top3_image(top3_entries):
     canvas_w = total_w + M * 2
     canvas_h = total_h + M * 2
     img = Image.new('RGBA', (canvas_w, canvas_h), BG)
+    _apply_watermark(img)
     d   = ImageDraw.Draw(img)
     d.rectangle([0, 0, canvas_w - 1, canvas_h - 1], outline=BORDER, width=BW)
 
@@ -179,6 +204,7 @@ def make_duck_image(duck_names):
     canvas_w = total_w + M * 2
     canvas_h = total_h + M * 2
     img = Image.new('RGBA', (canvas_w, canvas_h), BG)
+    _apply_watermark(img)
     d   = ImageDraw.Draw(img)
     d.rectangle([0, 0, canvas_w - 1, canvas_h - 1], outline=BORDER, width=BW)
 
