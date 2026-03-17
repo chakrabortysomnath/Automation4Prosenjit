@@ -129,7 +129,15 @@ if sort_btn and text.strip():
 
         if top3_lines:
             copy_text = "Top 3 CSM Teams FTD\n\n" + "\n".join(top3_lines)
-            st.code(copy_text, language=None)
+            top3_md_lines = ["**Top 3 CSM Teams FTD**", ""] + [f"**{line}**" for line in top3_lines]
+            top3_md_html = "<br>".join(top3_md_lines)
+            st.markdown(
+                f'<div style="border:1px solid #444;border-radius:6px;padding:10px 14px;'
+                f'background:#1e1e1e;color:#fff;font-size:0.95em;line-height:1.8;">'
+                f'{top3_md_html}</div>',
+                unsafe_allow_html=True
+            )
+            st.markdown("")
             copy_button(copy_text, "Top 3")
 
         # ---------- DUCK LIST ----------
@@ -147,7 +155,7 @@ if sort_btn and text.strip():
                 f'border-radius:4px;padding:1px 7px;font-size:1em;">0</span>'
                 f'</div>'
             )
-            duck_lines.append(team_name)
+            duck_lines.append(f"{team_name} 0")
 
         duck_html += '</div>'
         st.markdown(duck_html, unsafe_allow_html=True)
